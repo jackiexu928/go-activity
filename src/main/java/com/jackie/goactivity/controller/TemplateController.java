@@ -32,9 +32,15 @@ public class TemplateController extends BaseController {
         return toJSON(templateService.addTemplate(reqDTO));
     }
 
-    @PostMapping("addTemplate")
+    @PostMapping("deleteTemplate")
     @ResponseBody
     public String deleteTemplate(BaseIdReqDTO reqDTO){
-        return null;
+        return toJSON(templateService.deleteTemplate(reqDTO));
+    }
+
+    @GetMapping("getTemplate")
+    @ResponseBody
+    public String getTemplateById(BaseIdReqDTO reqDTO){
+        return toJSON(templateService.getTemplateById(reqDTO));
     }
 }

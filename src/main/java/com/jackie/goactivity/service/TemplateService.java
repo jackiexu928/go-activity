@@ -1,13 +1,16 @@
 package com.jackie.goactivity.service;
 
 import com.alibaba.fastjson.JSON;
+import com.jackie.goactivity.common.enums.GoActivityCodeEnum;
 import com.jackie.goactivity.dao.TemplateDao;
 import com.jackie.goactivity.domain.query.BaseVoidQuery;
+import com.jackie.goactivity.domain.request.BaseIdReqDTO;
 import com.jackie.goactivity.domain.request.TemplateAddReqDTO;
 import com.jackie.goactivity.domain.resopnse.AccountLoginRespDTO;
 import com.jackie.goactivity.domain.resopnse.TemplateRespDTO;
 import com.jackie.goactivity.entity.ActivityDetail;
 import com.jackie.goactivity.entity.Template;
+import com.jackie.goactivity.exception.GoActivityException;
 import com.jackie.goactivity.process.AbstractService;
 import com.jackie.goactivity.process.Context;
 import com.jackie.goactivity.util.ListUtil;
@@ -16,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -80,6 +84,28 @@ public class TemplateService extends AbstractService {
             template.setDetail(JSON.toJSONString(detail));
         }
         templateDao.save(template);
+        return context;
+    }
+
+    public Context<BaseIdReqDTO, Void> deleteTemplate(BaseIdReqDTO reqDTO){
+        Context<BaseIdReqDTO, Void> context = new Context<>();
+        Query query = new Query(Criteria.where("id").is(reqDTO.getId()));
+        Template template = templateDao.findOne(query);
+        if (null == template){
+            throw new GoActivityException(GoActivityCodeEnum.NO_RECORD);
+        }
+        templateDao.remove(query);
+        return context;
+    }
+
+    public Context<BaseIdReqDTO, Template> getTemplateById(BaseIdReqDTO reqDTO){
+        Context<BaseIdReqDTO, Template> context = new Context<>();
+        Query query = new Query(Criteria.where("id").is(reqDTO.getId()));
+        Template template = templateDao.findOne(query);
+        if (null == template){
+            throw new GoActivityException(GoActivityCodeEnum.NO_RECORD);
+        }
+        context.setResult(template);
         return context;
     }
 }

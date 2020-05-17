@@ -9,7 +9,9 @@ package com.jackie.goactivity.common.enums;
  */
 public enum GoActivityCodeEnum {
     PARAM_ISNULL("PARAM_ISNULL","参数为空"),
-    USER_NOT_LOGIN("USER_NOT_LOGIN", "用户未登录");
+    USER_NOT_LOGIN("USER_NOT_LOGIN", "用户未登录"),
+    NO_RECORD("NO_RECORD", "无此记录"),
+    ILLGAL_ARGUMENT("ILLGAL_ARGUMENT","非法参数");
 
     private String errMsg;
 

@@ -59,6 +59,10 @@ public class ActivityDetail extends BaseEntity{
      */
     private String address;
     /**
+     * 地点名称
+     */
+    private String addressName;
+    /**
      * 纬度
      */
     private Double latitude;
