@@ -35,11 +35,19 @@ public class ActivityDetail extends BaseEntity{
      */
     private Date startTime;
     /**
+     * 开始时间周几
+     */
+    private String startWeek;
+    /**
      * 报名截止时间
      */
     private Date endJoinTime;
     /**
-     * 限制人数
+     * 报名截止时间周几
+     */
+    private String endJoinWeek;
+    /**
+     * 限制人数,-1为不限
      */
     private Integer limitNum;
     /**

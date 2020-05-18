@@ -31,14 +31,14 @@ public class ActivityAddReqDTO extends BaseReqDTO {
      * 开始时间
      */
     private String startDate;
-    private Integer startHour;
-    private Integer startMinute;
+    private String startHour;
+    private String startMinute;
     /**
      * 报名截止时间
      */
     private String endJoinDate;
-    private Integer endJoinHour;
-    private Integer endJoinMinute;
+    private String endJoinHour;
+    private String endJoinMinute;
     /**
      * 限制人数
      */
@@ -84,13 +84,16 @@ public class ActivityAddReqDTO extends BaseReqDTO {
         if (StringUtils.isEmpty(startDate)){
             throw new GoActivityException(GoActivityCodeEnum.PARAM_ISNULL);
         }
-        if (startHour == null || startMinute == null){
+        if (StringUtils.isEmpty(startHour) || StringUtils.isEmpty(startMinute)){
             throw new GoActivityException(GoActivityCodeEnum.PARAM_ISNULL);
         }
         if (StringUtils.isEmpty(endJoinDate)){
             throw new GoActivityException(GoActivityCodeEnum.PARAM_ISNULL);
         }
-        if (endJoinHour == null || endJoinMinute == null){
+        if (StringUtils.isEmpty(endJoinHour) || StringUtils.isEmpty(endJoinMinute)){
+            throw new GoActivityException(GoActivityCodeEnum.PARAM_ISNULL);
+        }
+        if (cost == 4 && StringUtils.isEmpty(costRemark)){
             throw new GoActivityException(GoActivityCodeEnum.PARAM_ISNULL);
         }
         if (StringUtils.isEmpty(address)){
