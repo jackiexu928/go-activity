@@ -30,6 +30,10 @@ public class ActivityRecord extends BaseEntity{
      */
     private String activityId;
     /**
+     * 种类，1-运动，2-户外，3-聚餐，4-桌游，5-娱乐活动，6-读书会，7-其他，默认为其他
+     */
+    private Integer activityType;
+    /**
      * 参与类型，1-组织者，2-参与者
      */
     private Integer type;

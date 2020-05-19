@@ -1,12 +1,10 @@
 package com.jackie.goactivity.controller;
 
+import com.jackie.goactivity.domain.query.ActivityListQuery;
 import com.jackie.goactivity.domain.request.ActivityAddReqDTO;
 import com.jackie.goactivity.service.ActivityService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Created with IntelliJ IDEA
@@ -25,5 +23,11 @@ public class ActivityController extends BaseController {
     @ResponseBody
     public String addActivity(ActivityAddReqDTO reqDTO){
         return toJSON(activityService.addActivity(reqDTO));
+    }
+
+    @GetMapping("getActivityRecordList")
+    @ResponseBody
+    public String getActivityRecordList(ActivityListQuery query){
+        return toJSON(activityService.getRecordList(query));
     }
 }
