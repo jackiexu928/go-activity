@@ -1,13 +1,21 @@
 package com.jackie.goactivity.service;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.jackie.goactivity.common.enums.CostEnum;
+import com.jackie.goactivity.common.enums.GoActivityCodeEnum;
 import com.jackie.goactivity.dao.ActivityDetailDao;
 import com.jackie.goactivity.dao.ActivityRecordDao;
+import com.jackie.goactivity.dao.UserInfoDao;
 import com.jackie.goactivity.domain.query.ActivityListQuery;
 import com.jackie.goactivity.domain.request.ActivityAddReqDTO;
+import com.jackie.goactivity.domain.request.BaseIdReqDTO;
 import com.jackie.goactivity.domain.resopnse.AccountLoginRespDTO;
+import com.jackie.goactivity.domain.resopnse.ActivityDetailRespDTO;
 import com.jackie.goactivity.domain.resopnse.ActivityRecordRespDTO;
+import com.jackie.goactivity.domain.resopnse.JoinAccountRespDTO;
 import com.jackie.goactivity.entity.ActivityDetail;
 import com.jackie.goactivity.entity.ActivityRecord;
+import com.jackie.goactivity.entity.UserInfo;
 import com.jackie.goactivity.exception.GoActivityException;
 import com.jackie.goactivity.process.AbstractService;
 import com.jackie.goactivity.process.Context;
@@ -17,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -25,6 +34,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created with IntelliJ IDEA
@@ -35,10 +48,23 @@ import java.util.List;
  */
 @Service
 public class ActivityService extends AbstractService {
+    private static int TASK_LENGTH = 20;
+    private static ThreadFactory namedThreadFactory =
+            new ThreadFactoryBuilder().setNameFormat("ActivityService-pool-%d").build();
+    private static ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            TASK_LENGTH,
+            TASK_LENGTH * 5,
+            60 * 60 * 24,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<Runnable>(2000),
+            namedThreadFactory
+    );
     @Autowired
     private ActivityDetailDao activityDetailDao;
     @Autowired
     private ActivityRecordDao activityRecordDao;
+    @Autowired
+    private UserInfoDao userInfoDao;
 
     private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
@@ -71,7 +97,7 @@ public class ActivityService extends AbstractService {
         if (reqDTO.getLimitNum() == null){
             activityDetail.setLimitNum(-1);
         }
-        activityDetail.setJoinNum(0);
+        activityDetail.setJoinNum(1);
         activityDetail.setCost(reqDTO.getCost());
         if (reqDTO.getCost() == 4){
             activityDetail.setCostRemark(reqDTO.getCostRemark());
@@ -134,6 +160,100 @@ public class ActivityService extends AbstractService {
             }
         }
         context.setResult(list);
+        return context;
+    }
+
+    public Context<BaseIdReqDTO, ActivityDetailRespDTO> getActivityDetail(BaseIdReqDTO reqDTO){
+        Context<BaseIdReqDTO, ActivityDetailRespDTO> context = new Context<>();
+        ActivityDetailRespDTO respDTO = new ActivityDetailRespDTO();
+        Date now = new Date();
+        //查询活动
+        ActivityDetail activityDetail = activityDetailDao.findById(reqDTO.getId());
+        respDTO.setId(activityDetail.getId());
+        respDTO.setTheme(activityDetail.getTheme());
+        respDTO.setStartTime(simpleDateFormat.format(activityDetail.getStartTime())
+                + activityDetail.getStartWeek());
+        respDTO.setEndJoinTime(simpleDateFormat.format(activityDetail.getEndJoinTime())
+                + activityDetail.getEndJoinWeek());
+        respDTO.setAddressName(activityDetail.getAddressName());
+        respDTO.setLatitude(activityDetail.getLatitude());
+        respDTO.setLongitude(activityDetail.getLongitude());
+        respDTO.setCostName(CostEnum.getNameByType(activityDetail.getCost()));
+        respDTO.setCostRemark(activityDetail.getCostRemark());
+        respDTO.setJoinNum(activityDetail.getJoinNum());
+        respDTO.setLimitNum(activityDetail.getLimitNum());
+        respDTO.setRemark(activityDetail.getRemark());
+        if (now.before(activityDetail.getStartTime())) {
+            respDTO.setWillOrDone(1);
+        } else {
+            respDTO.setWillOrDone(2);
+        }
+        context.setResult(respDTO);
+        return context;
+    }
+
+    public Context<BaseIdReqDTO, List<JoinAccountRespDTO>> getJoinAccount(BaseIdReqDTO reqDTO){
+        Context<BaseIdReqDTO, List<JoinAccountRespDTO>> context = new Context<>();
+        List<JoinAccountRespDTO> list = new ArrayList<>();
+        //查询活动
+        ActivityDetail activityDetail = activityDetailDao.findById(reqDTO.getId());
+        if (activityDetail.getJoinNum() > 0){
+            //查询记录
+            Query recordQuery = new Query(Criteria.where("activityId").is(reqDTO.getId()))
+                    .with(new Sort(Sort.Direction.ASC, "createTime"));
+            List<ActivityRecord> recordList = activityRecordDao.find(recordQuery);
+            for (ActivityRecord record : recordList){
+                Query userQuery = new Query(Criteria.where("openId").is(record.getOpenId()));
+                UserInfo userInfo = userInfoDao.findOne(userQuery);
+                JoinAccountRespDTO respDTO = new JoinAccountRespDTO();
+                respDTO.setNickName(userInfo.getNickName());
+                respDTO.setAvatarUrl(userInfo.getAvatarUrl());
+                respDTO.setRole(record.getType());
+                list.add(respDTO);
+            }
+        }
+        context.setResult(list);
+        return context;
+    }
+    /**
+     * Map<Long, FutureTask<List<CountryHarmfulStatisticsVO>>> res = new HashMap<>();
+     *         for (CountryHarmfulFormulaInfoRespDTO one : formulaList) {
+     *             final CountryHarmfulFormulaInfoRespDTO rule = one;
+     *             FutureTask<List<CountryHarmfulStatisticsVO>> task = new FutureTask<>(
+     *                     new Callable<List<CountryHarmfulStatisticsVO>>() {
+     *                         @Override
+     *                         public List<CountryHarmfulStatisticsVO> call() {
+     *                             String methodName = ClassMethodNameEnum.getQueryMethodByType(rule.getLocation());
+     *                             return (List<CountryHarmfulStatisticsVO>) fetchDataInvoke(rule, query, methodName);
+     *                         }
+     *                     });
+     *             res.put(one.getId(), task);
+     *             executor.execute(task);
+     *         }
+     *
+     *         Map<Long, List<CountryHarmfulStatisticsVO>> result = new HashMap<>();
+     *         for (CountryHarmfulFormulaInfoRespDTO one : formulaList) {
+     *             List<CountryHarmfulStatisticsVO> vo = this.getDataFromFutureTaskResponse(res, one.getId());
+     *             result.put(one.getId(), vo);
+     *         }
+     */
+    public Context<BaseIdReqDTO, Void> deleteActivity(BaseIdReqDTO reqDTO){
+        Context<BaseIdReqDTO, Void> context = new Context<>();
+        AccountLoginRespDTO accountLoginRespDTO = TrackHolder.getTracker().getAccountLoginRespDTO();
+        Date now = new Date();
+        ActivityDetail activityDetail = activityDetailDao.findById(reqDTO.getId());
+        if (!activityDetail.getCreateId().equals(accountLoginRespDTO.getOpenId())){
+            throw new GoActivityException(GoActivityCodeEnum.NO_JURISDICTION);
+        }
+        if (activityDetail.getStartTime().before(now)){
+            throw new GoActivityException(GoActivityCodeEnum.ACTIVITY_IS_BEGIN);
+        }
+        Query query = new Query(Criteria.where("id").is(activityDetail.getId()));
+        Update update = new Update();
+        update.set("validFlag", 0);
+        update.set("updateId", accountLoginRespDTO.getOpenId());
+        update.set("updateTime", now);
+        activityDetailDao.update(query, update);
         return context;
     }
 }
