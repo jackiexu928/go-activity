@@ -16,6 +16,8 @@ public class MessageRespDTO {
      * 活动ID
      */
     private String activityId;
+    private String nickName;
+    private String avatarUrl;
     /**
      * 是否公开，0-仅自己可见，1-公开
      * 查询时，会优先展示自己的留言
@@ -29,4 +31,5 @@ public class MessageRespDTO {
      * 是否为自己的，1-是，0-否
      */
     private Integer self;
+    private String createTime;
 }

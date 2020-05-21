@@ -48,17 +48,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class ActivityService extends AbstractService {
-    private static int TASK_LENGTH = 20;
-    private static ThreadFactory namedThreadFactory =
-            new ThreadFactoryBuilder().setNameFormat("ActivityService-pool-%d").build();
-    private static ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            TASK_LENGTH,
-            TASK_LENGTH * 5,
-            60 * 60 * 24,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>(2000),
-            namedThreadFactory
-    );
     @Autowired
     private ActivityDetailDao activityDetailDao;
     @Autowired
@@ -215,28 +204,7 @@ public class ActivityService extends AbstractService {
         context.setResult(list);
         return context;
     }
-    /**
-     * Map<Long, FutureTask<List<CountryHarmfulStatisticsVO>>> res = new HashMap<>();
-     *         for (CountryHarmfulFormulaInfoRespDTO one : formulaList) {
-     *             final CountryHarmfulFormulaInfoRespDTO rule = one;
-     *             FutureTask<List<CountryHarmfulStatisticsVO>> task = new FutureTask<>(
-     *                     new Callable<List<CountryHarmfulStatisticsVO>>() {
-     *                         @Override
-     *                         public List<CountryHarmfulStatisticsVO> call() {
-     *                             String methodName = ClassMethodNameEnum.getQueryMethodByType(rule.getLocation());
-     *                             return (List<CountryHarmfulStatisticsVO>) fetchDataInvoke(rule, query, methodName);
-     *                         }
-     *                     });
-     *             res.put(one.getId(), task);
-     *             executor.execute(task);
-     *         }
-     *
-     *         Map<Long, List<CountryHarmfulStatisticsVO>> result = new HashMap<>();
-     *         for (CountryHarmfulFormulaInfoRespDTO one : formulaList) {
-     *             List<CountryHarmfulStatisticsVO> vo = this.getDataFromFutureTaskResponse(res, one.getId());
-     *             result.put(one.getId(), vo);
-     *         }
-     */
+
     public Context<BaseIdReqDTO, Void> deleteActivity(BaseIdReqDTO reqDTO){
         Context<BaseIdReqDTO, Void> context = new Context<>();
         AccountLoginRespDTO accountLoginRespDTO = TrackHolder.getTracker().getAccountLoginRespDTO();
