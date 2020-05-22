@@ -59,7 +59,7 @@ public class MessageService extends AbstractService {
         Context<BaseIdReqDTO, List<MessageRespDTO>> context = new Context<>();
         List<MessageRespDTO> respList = new ArrayList<>();
         AccountLoginRespDTO accountLoginRespDTO = TrackHolder.getTracker().getAccountLoginRespDTO();
-        Query selfQuery = new Query(Criteria.where("activityId").is(reqDTO.getId()))
+        Query selfQuery = new Query(Criteria.where("activityId").is(reqDTO.getId()).and("validFlag").is(1))
                 .with(new Sort(Sort.Direction.ASC,"createTime"));
         List<Message> selfList = messageDao.find(selfQuery);
         if (ListUtil.isNotEmpty(selfList)){
@@ -195,6 +195,7 @@ public class MessageService extends AbstractService {
             }
             Query query = new Query(Criteria.where("id").is(message.getId()));
             Update update = new Update();
+            update.set("open", reqDTO.getOpen());
             update.set("content", reqDTO.getContent());
             update.set("updateId", accountLoginRespDTO.getOpenId());
             update.set("UpdateTime", new Date());
